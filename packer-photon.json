@@ -1,118 +1,174 @@
 {
-  "variables": {
-    "iso_file": "",
-    "iso_sha1sum": "",
-    "product_version": "",
-    "root_password": "2RQrZ83i79N6szpvZNX6"
-  },
-  "builders": [
-    {
-      "name": "vagrant-vmware_desktop",
-      "vm_name": "photon",
-      "vmdk_name": "photon-disk1",
-      "type": "vmware-iso",
-      "headless": false,
-      "disk_size": 20480,
-      "disk_type_id": 0,
-      "guest_os_type": "other3xlinux-64",
-      "iso_url": "{{user `iso_file`}}",
-      "iso_checksum": "{{user `iso_sha1sum`}}",
-      "iso_checksum_type": "sha1",
-      "ssh_username": "root",
-      "ssh_password": "{{user `root_password`}}",
-      "ssh_wait_timeout": "60m",
-      "boot_wait": "5s",
-      "shutdown_command": "shutdown -h now",
-      "http_directory": "scripts",
-      "version": 11,
-      "vmx_data": {
-        "scsi0.virtualDev": "pvscsi",
-        "ethernet0.virtualDev": "vmxnet3"
-        },
-      "vmx_data_post": {
-        "displayname": "VMware Photon",
-        "usb.present": "false"
-        },
-        "boot_command": [
-          "<esc><wait>",
-          "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json",
-          "<enter>"
-        ]
+    "_comment": "The `root_password` var must match `scripts/photon-kickstart.json`",
+    "variables": {
+        "root_password": "2RQrZ83i79N6szpvZNX6",
+        "vagrant_cloud_token": "{{ env `VAGRANT_CLOUD_TOKEN` }}"
     },
-    {
-      "name": "vagrant-virtualbox",
-      "vm_name": "photon",
-      "type": "virtualbox-iso",
-      "headless": false,
-      "hard_drive_interface": "scsi",
-      "disk_size": 20480,
-      "guest_os_type": "Linux_64",
-      "iso_url": "{{user `iso_file`}}",
-      "iso_checksum": "{{user `iso_sha1sum`}}",
-      "iso_checksum_type": "sha1",
-      "ssh_username": "root",
-      "ssh_password": "{{user `root_password`}}",
-      "ssh_wait_timeout": "60m",
-      "boot_wait": "5s",
-      "http_directory": "scripts",
-      "shutdown_command": "shutdown -h now",
-      "boot_command": [
-        "<esc><wait>",
-        "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json",
-        "<enter>"
-      ]
-    }
-  ],
+    "builders": [
+        {
+            "name": "vagrant-vmware-iso",
+            "vm_name": "photon",
+            "vmdk_name": "photon-disk1",
+            "type": "vmware-iso",
+            "headless": false,
+            "disk_size": 20480,
+            "disk_type_id": 0,
+            "guest_os_type": "other3xlinux-64",
+            "iso_url": "{{user `iso_file`}}",
+            "iso_checksum": "{{user `iso_sha1sum`}}",
+            "iso_checksum_type": "sha1",
+            "ssh_username": "root",
+            "ssh_password": "{{user `root_password`}}",
+            "ssh_wait_timeout": "60m",
+            "boot_wait": "5s",
+            "shutdown_command": "shutdown -h now",
+            "http_directory": "scripts",
+            "version": 11,
+            "vmx_data": {
+                "scsi0.virtualDev": "pvscsi",
+                "ethernet0.virtualDev": "vmxnet3"
+            },
+            "vmx_data_post": {
+                "displayname": "PhotonOS {{user `product_version`}}",
+                "usb.present": "false"
+            },
+            "boot_command": [
+                "<esc><wait>",
+                "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json photon.media=cdrom",
+                "<enter>"
+            ],
+            "format": "ova"
+        },
+        {
+            "name": "vagrant-aws-ami",
+            "type": "amazon-ebs",
+            "profile": "{{user `aws_profile`}}",
+            "region": "{{user `aws_region`}}",
+            "instance_type": "m4.large",
+            "source_ami": "{{user `aws_source_ami_us_west_1`}}",
+            "ssh_username": "root",
+            "associate_public_ip_address": true,
+            "ami_name": "photon-vagrant {{timestamp}}",
+            "ami_block_device_mappings": [],
+            "ebs_optimized": true,
+            "shutdown_behavior": "terminate",
+            "ssh_keypair_name": "{{user `aws_ssh_keypair_name`}}",
+            "ssh_private_key_file": "{{user `aws_ssh_private_key_file`}}"
+        },
+        {
+            "name": "vagrant-virtualbox-iso",
+            "vm_name": "photon",
+            "type": "virtualbox-iso",
+            "headless": false,
+            "hard_drive_interface": "scsi",
+            "disk_size": 20480,
+            "guest_os_type": "Linux_64",
+            "guest_additions_path": "/root/VBoxGuestAdditions_{{user `virtualbox_guest_additions_version`}}.iso",
+            "guest_additions_url": "http://download.oracle.com/virtualbox/{{user `virtualbox_guest_additions_version`}}/VBoxGuestAdditions_{{user `virtualbox_guest_additions_version`}}.iso",
+            "guest_additions_sha256": "{{user `virtualbox_guest_additions_sha256`}}",
+            "iso_url": "{{user `iso_file`}}",
+            "iso_checksum": "{{user `iso_sha1sum`}}",
+            "iso_checksum_type": "sha1",
+            "iso_checksum_url": "https://download.oracle.com/virtualbox/{{user `virtualbox_guest_additions_version`}}/SHA256SUMS",
+            "ssh_username": "root",
+            "ssh_password": "{{user `root_password`}}",
+            "ssh_wait_timeout": "5m",
+            "boot_wait": "5s",
+            "http_directory": "scripts",
+            "shutdown_command": "shutdown -h now",
+            "boot_command": [
+                "<esc><wait>",
+                "vmlinuz initrd=initrd.img root=/dev/ram0 loglevel=3 ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/photon-kickstart.json photon.media=cdrom",
+                "<enter>"
+            ],
+            "vboxmanage": [
+                [ "modifyvm", "{{.Name}}", "--nictype1", "virtio" ]
+            ]
+        }
+    ],
     "provisioners": [
-    {
-      "type": "shell",
-      "script": "scripts/photon-package_provisioning.sh"
-    },
-    {
-      "type": "shell",
-      "only": ["vagrant-vmware_desktop", "vagrant-virtualbox"],
-      "script": "scripts/photon-vagrant-user_provisioning.sh"
-    },
-    {
-      "type": "shell",
-      "only": ["vagrant-vmware_desktop"],
-      "script": "scripts/photon-sharedfolders_prep.sh"
-    },
-    {
-      "type": "shell",
-      "only": ["vagrant-virtualbox"],
-      "script": "scripts/photon-vagrant-vbox_additions.sh"
-    },
-    {
-      "type": "file",
-      "only": ["vagrant-virtualbox"],
-      "source": "scripts/photon-virtualbox-load-module.conf",
-      "destination": "/etc/modules-load.d/virtualbox.conf"
-    },
-    {
-      "type": "shell",
-      "inline": ["sed -i '/linux/ s/$/ net.ifnames=0/' /boot/grub2/grub.cfg"]
-    },
-    {
-      "type": "shell",
-      "inline": ["echo 'GRUB_CMDLINE_LINUX=\"net.ifnames=0\"' >> /etc/default/grub"]
-    },
-    {
-      "type": "shell",
-      "script": "scripts/photon-security_check.sh"
-    },
-    {
-      "type": "shell",
-      "inline": ["sed -i 's/OS/Linux/' /etc/photon-release"]
-    }
-  ],
-  "post-processors": [
-    {
-      "type": "vagrant",
-      "only": ["vagrant-vmware_desktop", "vagrant-virtualbox"],
-      "compression_level": 9,
-      "vagrantfile_template": "scripts/photon-vagrantfile.rb",
-      "output": "photon-{{user `product_version`}}-{{.BuildName}}.box"
-    }
-  ]
-  }
+        {
+            "type": "shell",
+            "inline": [ "tdnf --assumeyes distro-sync" ]
+        },
+        {
+            "type": "shell",
+            "only": [ "vagrant-virtualbox-iso" ],
+            "script": "scripts/dependencies/virtualbox/install-virtualbox-packages.sh"
+        },
+        {
+            "type": "shell",
+            "inline": [ "reboot 0" ],
+            "expect_disconnect": true
+        },
+        {
+            "type": "shell",
+            "only": [ "vagrant-virtualbox-iso" ],
+            "scripts": [
+                "scripts/dependencies/virtualbox/install-virtualbox-guest-additions.sh",
+                "scripts/dependencies/virtualbox/clean-virtualbox-packages.sh",
+                "scripts/dependencies/virtualbox/config-systemctl.sh"
+            ]
+        },
+        {
+            "type": "file",
+            "only": [ "vagrant-virtualbox-iso" ],
+            "source": "scripts/dependencies/virtualbox/virtualbox.conf",
+            "destination": "/etc/modules-load.d/virtualbox.conf"
+        },
+        {
+            "type": "shell",
+            "only": [ "vagrant-virtualbox-iso", "vagrant-aws-ami", "vagrant-vmware-iso" ],
+            "scripts": [
+                "scripts/dependencies/dev/install-dev-packages.sh",
+                "scripts/dependencies/vagrant/vagrant-user-setup.sh"
+            ]
+        },
+        {
+            "type": "shell",
+            "scripts": [
+                "scripts/dependencies/docker/install-docker-compose.sh",
+                "scripts/dependencies/docker/enable-docker-daemon.sh",
+                "scripts/dependencies/ansible/install-ansible-packages.sh"
+            ]
+        },
+        {
+            "type": "shell",
+            "inline": "echo 'Replace this step with Ansible provisioner(s)'"
+        },
+        {
+            "type": "shell",
+            "scripts": [
+                "scripts/dependencies/ansible/clean-ansible-packages.sh",
+                "scripts/util/security-check.sh",
+                "scripts/util/config-grub.sh",
+                "scripts/util/clean-tdnf.sh",
+                "scripts/util/compress-disks.sh"
+            ]
+        }
+    ],
+    "post-processors": [
+        [
+            {
+                "type": "vagrant",
+                "only": [ "vagrant-virtualbox-iso", "vagrant-aws-ami", "vagrant-vmware-iso" ],
+                "compression_level": 9,
+                "vagrantfile_template": "scripts/dependencies/vagrant/Vagrantfile",
+                "include": [
+                    "scripts/dependencies/vagrant/vars.yml",
+                    "scripts/dependencies/vagrant/read_ip_address.rb",
+                    "scripts/dependencies/vagrant/read_public_ip_address.rb"
+                ],
+                "output": "photon-{{user `product_version`}}-{{.BuildName}}.box"
+            },
+            {
+                "type": "vagrant-cloud",
+                "only": [ "vagrant-virtualbox-iso", "vagrant-aws-ami", "vagrant-vmware-iso" ],
+                "box_tag": "{{user `vagrant_box_tag`}}",
+                "access_token": "{{user `vagrant_cloud_token`}}",
+                "version": "{{user `vagrant_box_version`}}-{{isotime \"2006-01-02\"}}",
+                "keep_input_artifact": true
+            }
+        ]
+    ]
+}

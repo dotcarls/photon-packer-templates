@@ -1,0 +1,63 @@
+
+# The contents below were provided by the Packer Vagrant post-processor
+
+Vagrant.configure("2") do |config|
+  config.vm.base_mac = "080027BE7F85"
+end
+
+
+# The contents below (if any) are custom contents provided by the
+# Packer template during image build.
+ENV["VAGRANT_DEFAULT_PROVIDER"] = "virtualbox"
+
+require_relative "./read_ip_address"
+require_relative "./read_public_ip_address"
+
+local_vars_file = File.join(File.dirname(__FILE__), "vars.yml")
+local_vars      = YAML.load_file(local_vars_file)
+ssh             = local_vars["ssh"]
+vm              = local_vars["vm"]
+
+Vagrant.require_version ">= 1.6.2"
+Vagrant.configure("2") do |config|
+    config.ssh.username = ssh["username"]
+    config.nfs.functional = false
+
+    config.vm.provider "virtualbox" do |v, override|
+        v.gui           = vm["options"]["gui"]
+        v.memory        = vm["options"]["memory"]
+        v.cpus          = vm["options"]["cpus"]
+        v.linked_clone  = vm["options"]["linked_clone"]
+
+        if Vagrant.has_plugin?("vagrant-vbguest")
+            override.vbguest.no_install = true
+        end
+
+        if Vagrant.has_plugin?("vagrant-hostmanager")
+            override.hostmanager.ip_resolver = proc do |vm, resolving_vm|
+                read_ip_address(vm)
+            end
+        end
+    end
+
+    ["vmware_fusion", "vmware_workstation", "vmware_appcatalyst"].each do |p|
+        config.vm.provider p do |v, override|
+            v.gui               = vm["options"]["gui"]
+            v.vmx["memsize"]    = vm["options"]["memory"]
+            v.vmx["numvcpus"]   = vm["options"]["cpus"]
+            v.linked_clone      = vm["options"]["linked_clone"]
+
+            # Use paravirtualized virtual hardware on VMW hypervisors
+            v.vmx["ethernet0.virtualDev"] = "vmxnet3"
+            v.vmx["scsi0.virtualDev"] = "pvscsi"
+            # persistent device naming whitelist
+            v.whitelist_verified = true
+
+            if Vagrant.has_plugin?("vagrant-hostmanager")
+                override.hostmanager.ip_resolver = proc do |vm, resolving_vm|
+                    read_ip_address(vm)
+                end
+            end
+        end
+    end
+end

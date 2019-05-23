@@ -1,0 +1,43 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'virtualbox'
+
+local_vars_file = File.join(File.dirname(__FILE__), "vars.yml")
+local_vars      = YAML.load_file(local_vars_file)
+
+ssh             = local_vars["ssh"]
+vm              = local_vars["aws"]
+
+Vagrant.configure("2") do |config|
+    machines = local_vars["machines"]
+    machines.each do |machine|
+        config.vm.define machine["name"] do |conf|
+            conf.vm.hostname = machine["name"]
+
+            # AWS Provider Config
+            config.vm.provider "aws" do |ec2, override|
+                override.ssh.username       = aws["ssh"]["username"]
+                override.ssh.private_key_path   = aws["ssh"]["private_key_path"]
+
+                ec2.aws_profile             = aws["options"]["aws_profile"]
+                ec2.keypair_name            = aws["options"]["keypair_name"]
+
+                ec2.instance_type           = aws["options"]["instance_type"]
+                ec2.region                  = aws["options"]["region"]
+                ec2.availability_zone       = aws["options"]["availability_zone"]
+
+                if Vagrant.has_plugin?("vagrant-hostmanager")
+                    override.hostmanager.ip_resolver = proc do |vm, resolving_vm|
+                        read_public_ip_address(vm)
+                    end
+                end
+            end
+        end
+    end
+
+    if Vagrant.has_plugin?("vagrant-hostmanager")
+        config.hostmanager.enabled = true
+        config.hostmanager.manage_host = true
+        config.hostmanager.manage_guest = true
+    end
+end

@@ -1,0 +1,16 @@
+---
+machines:
+    - name: photon3
+
+aws:
+    ssh:
+        username: vagrant
+        private_key_path: ./path/to/some/key.pem
+
+    options:
+        aws_profile: default
+        keypair_name: dev-uswest
+
+        instance_type: m4.large
+        region: us-west-1
+        availability_zone: us-west-1b

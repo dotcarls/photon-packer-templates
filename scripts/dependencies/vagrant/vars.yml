@@ -1,0 +1,11 @@
+---
+
+vm:
+    options:
+        cpus: 4
+        gui: false
+        linked_clone: true
+        memory: 4096
+
+ssh:
+    username: vagrant

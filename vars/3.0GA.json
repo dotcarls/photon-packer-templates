@@ -1,0 +1,13 @@
+{
+   "product_version" : "3.0GA",
+   "iso_sha1sum" : "1c38dd6d00e11d3cbf7768ce93fc3eb8913a9673",
+   "iso_file" : "http://dl.bintray.com/vmware/photon/3.0/GA/iso/photon-3.0-26156e2.iso",
+   "virtualbox_guest_additions_version": "6.0.6",
+   "virtualbox_guest_additions_sha256": "832152b63630ceb2f89fb460eeb35b74a1218df903758157f785122392d32ceb",
+   "aws_profile": "default",
+   "aws_region": "us-west-1",
+   "aws_source_ami_us_west_1": "ami-0576199ca1b362d73",
+   "aws_source_ami_us_west_2": "ami-0a94981ba259c30d6",
+   "aws_ssh_keypair_name": "CHANGEME",
+   "aws_ssh_private_key_file": "/path/to/keypair"
+}

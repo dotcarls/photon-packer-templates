@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 # Minimum security baseline, disabling root user and sshd password
 # authentication
 

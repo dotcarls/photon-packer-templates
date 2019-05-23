@@ -1,0 +1,14 @@
+---
+machines:
+    - name: photon3
+
+vm:
+    box: dotcarls/photon3
+    network:
+        network: private_network
+        type: dhcp
+    options:
+        cpus: 4
+        gui: false
+        linked_clone: true
+        memory: 4096
